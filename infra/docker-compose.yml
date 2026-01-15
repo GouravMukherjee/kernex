@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: kernex-postgres
+    environment:
+      POSTGRES_USER: kernex
+      POSTGRES_PASSWORD: kernex_dev_password
+      POSTGRES_DB: kernex_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kernex"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Control Plane API
+  api:
+    build:
+      context: ./control-plane
+      dockerfile: Dockerfile
+    container_name: kernex-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://kernex:kernex_dev_password@postgres:5432/kernex_db
+      APP_NAME: "Kernex Control Plane"
+      API_PREFIX: "/api/v1"
+      BUNDLE_STORAGE_PATH: /data/bundles
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./control-plane/data:/data
+      - ./control-plane/app:/app/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kernex-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
+  # Optional: PgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: kernex-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@kernex.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
