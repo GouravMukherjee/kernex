@@ -1,173 +1,450 @@
 # Kernex
 
-A foundational AI systems framework designed as the core intelligence layer for advanced AI applications.
+> A device management and ML bundle deployment system for edge devices, with an intelligent control plane and runtime agent architecture.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green)](https://fastapi.tiangolo.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## Overview
+## 🧠 Core Philosophy
 
-Kernex is not a standalone AI assistant or product. It is the underlying infrastructure that powers intelligent agents, reasoning systems, memory modules, and tool execution layers.
+Kernex is built around fundamental principles for edge AI deployment:
 
-The primary goal of Kernex is to decouple intelligence from interfaces. User-facing applications—such as voice assistants, dashboards, APIs, or devices—should sit on top of Kernex, not inside it.
-
-Kernex is intended to evolve into a reusable platform that multiple AI products can rely on without duplicating core intelligence logic.
-
----
-
-## Why Kernex Exists
-
-Modern AI systems are often tightly coupled, difficult to extend, and hard to reason about at scale. They treat models as the center of the system rather than as interchangeable components.
-
-Kernex addresses this by focusing on system design rather than model performance. It provides a structured approach to building AI applications where:
-
-- Intelligence is separated from presentation
-- Components can be swapped, extended, or composed
-- Systems scale from single-user setups to larger deployments
-- Control remains with developers, not opaque frameworks
+- **Device-Centric** – Every device registers, maintains identity, and receives secure commands
+- **Minimal Footprint** – Lightweight runtime agent suitable for edge hardware
+- **Bundle-Based Deployment** – Model/code bundles versioned, checksummed, and deployed atomically
+- **Command-Driven Control** – Devices poll heartbeat endpoint, pull commands asynchronously
+- **Privacy-First** – Local execution by default, encrypted device identity with RSA keypairs
 
 ---
 
-## Core Principles
+## 🏗️ Architecture
 
-Kernex is built on the following design principles:
-
-- **Modularity**: Every component should be independently replaceable
-- **Extensibility**: New capabilities can be added without restructuring the core
-- **Model-agnostic**: LLMs are treated as interchangeable components, not locked dependencies
-- **Privacy-aware**: Local-first and privacy-conscious defaults where possible
-- **Developer-controlled**: Configuration-driven behavior with clear abstractions
-- **Separation of concerns**: Clean boundaries between orchestration, intelligence, memory, and tools
-- **Composability over monoliths**: Build complex systems from well-defined, smaller parts
-
----
-
-## High-Level Architecture
-
-Kernex is structured into distinct layers, each with a well-defined purpose:
+Kernex is a **two-component system** with distinct responsibilities:
 
 ```
-┌─────────────────────────────────────────────────┐
-│           INTERFACE LAYER (External)            │
-│     CLI, UI, API, Voice, Devices, etc.          │
-└────────────────────┬────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│         CONTROL PLANE (FastAPI REST API)            │
+│   • Device registration & identity management       │
+│   • Bundle versioning & storage                     │
+│   • Deployment orchestration & scheduling           │
+│   • Command generation for device polling           │
+└────────────────────┬────────────────────────────────┘
                      │
-┌────────────────────▼────────────────────────────┐
-│            ORCHESTRATION LAYER                  │
-│   Task routing, agent coordination, control     │
-└────────────────────┬────────────────────────────┘
+        HTTP Heartbeat (Every 60s)
                      │
-┌────────────────────▼────────────────────────────┐
-│            INTELLIGENCE LAYER                   │
-│  LLM interfaces, reasoning, planning, decisions │
-└────────────────────┬────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────┐
-│              MEMORY LAYER                       │
-│  Short-term context, long-term storage, vectors │
-└────────────────────┬────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────┐
-│           TOOLING / ACTION LAYER                │
-│    External system interaction, tool execution  │
-└─────────────────────────────────────────────────┘
+┌────────────────────▼────────────────────────────────┐
+│       RUNTIME AGENT (Device/Edge Agent)             │
+│   • Device discovery & RSA keypair generation       │
+│   • Heartbeat polling loop with backoff             │
+│   • Bundle download & execution                     │
+│   • Status reporting & metrics collection           │
+└─────────────────────────────────────────────────────┘
 ```
 
-Each layer is designed for independence. Changes in one layer should not cascade into others.
+**Data Flow:**
+1. Device generates RSA keypair, registers with control plane → receives `device_id`
+2. Device enters heartbeat loop (default 60s interval), sends metrics (CPU, memory, agent version)
+3. Control plane polls pending deployments, returns commands in heartbeat response
+4. Device executes commands (deploy bundle, rollback, etc.) and reports status
+5. Control plane tracks deployment progress and device health
 
 ---
 
-## Key System Layers
+## ✨ Key Features
 
-### Orchestration Layer
-- Responsible for task routing, agent coordination, and execution flow
-- Manages how different components communicate
-- Acts as the control plane of the system
+### Device Management 🔌
+- ✅ Unique device registration with RSA public key authentication
+- ✅ Automatic keypair generation on first run
+- ✅ Persistent device identity caching (`device_config.json`)
+- ✅ Real-time heartbeat monitoring (last_heartbeat tracking)
+- ✅ Hardware metadata collection (CPU %, memory, agent version)
 
-### Intelligence Layer
-- Interfaces with language models and reasoning engines
-- Handles planning, decision-making, and cognitive workflows
-- Does not assume a specific LLM provider or model
+### Bundle Management 📦
+- ✅ Version-based bundle uploads with SHA256 checksumming
+- ✅ JSON manifest support for bundle metadata
+- ✅ Atomic file storage with path (`{version}-{filename}`)
+- ✅ Bundle validation on control plane before deployment
+- ✅ Rollback support (version history tracking)
 
-### Memory Layer
-- Supports short-term and long-term memory concepts
-- Designed to work with structured memory, embeddings, and persistent storage
-- Memory is treated as a first-class system component
+### Deployment Orchestration 🚀
+- ✅ Multi-device deployment targeting (JSON array of device_ids)
+- ✅ Deployment status tracking (pending → in_progress → success/failed)
+- ✅ Command-driven polling (devices pull vs. server push)
+- ✅ Exponential backoff for failed heartbeats (1s → 60s max)
+- ✅ Idempotent device registration (re-register with same pubkey = same device_id)
 
-### Tooling / Action Layer
-- Enables controlled interaction with external systems
-- Tools are invoked through defined interfaces
-- Designed for safety, observability, and extensibility
+### Control Plane (FastAPI) ⚙️
+- RESTful API under `/api/v1` prefix
+- SQLAlchemy async ORM with PostgreSQL/SQLite support
+- Automatic schema migration on startup
+- Request/response validation with Pydantic 2.x
+- Structured logging for debugging
 
-### Interface Layer (External)
-- CLIs, UIs, APIs, voice systems, and devices consume Kernex
-- These are consumer applications sitting on top of the framework, not part of core
-
----
-
-## What Kernex Is and Is Not
-
-### Kernex Is
-- A foundational framework for building AI systems
-- Infrastructure for orchestrating intelligence, memory, and tools
-- A set of architectural patterns and abstractions
-- Model-agnostic and extensible
-
-### Kernex Is Not
-- A standalone AI assistant or chatbot
-- An LLM wrapper or API client
-- A replacement for existing ML frameworks
-- A user-facing product
-
-## Intended Use Cases
-
-Kernex is designed to support:
-
-- AI agents and assistants (built on top of Kernex)
-- Research and experimentation in AI systems design
-- Personal or local-first AI stacks
-- Future AI-native products sharing a common intelligence core
-- Systems requiring clear separation between reasoning and presentation
+### Runtime Agent 🖥️
+- Minimal dependencies (httpx, cryptography, pydantic)
+- Async heartbeat loop with robust error handling
+- Pluggable command executors (deploy, rollback, etc.)
+- Metrics aggregation before each heartbeat
+- Docker & systemd service support
 
 ---
 
-## Project Status
+## 📁 Project Structure
 
-Kernex is early-stage and under active design.
-
-- Architecture and abstractions are being defined
-- Core modules are in prototyping phase
-- Not production-ready
-
-This repository will evolve as the system matures. Expect breaking changes and refactoring as design patterns solidify.
+```
+kernex/
+│
+├── control-plane/              # FastAPI REST API
+│   ├── app/
+│   │   ├── main.py             # App initialization, routes setup
+│   │   ├── config.py           # Settings (DATABASE_URL, etc.)
+│   │   ├── auth.py             # Authentication (planned: RSA signatures)
+│   │   ├── api/v1/             # API routes
+│   │   │   ├── devices.py      # Device registration & heartbeat
+│   │   │   ├── bundles.py      # Bundle upload & versioning
+│   │   │   └── deployments.py  # Deployment creation & status
+│   │   ├── models/             # SQLAlchemy ORM models
+│   │   │   ├── device.py       # Device, heartbeat records
+│   │   │   ├── bundle.py       # Bundle versioning
+│   │   │   └── deployment.py   # Deployment tracking
+│   │   ├── schemas/            # Pydantic request/response models
+│   │   ├── services/           # Business logic layer
+│   │   └── db/
+│   │       ├── session.py      # AsyncSession factory
+│   │       └── migrations/     # Alembic schema versions
+│   ├── tests/                  # Pytest suite (in-memory SQLite)
+│   ├── Dockerfile              # Multi-stage FastAPI build
+│   └── requirements.txt         # FastAPI, SQLAlchemy, etc.
+│
+├── runtime/                     # Device/Edge Agent
+│   ├── kernex/
+│   │   ├── main.py             # Heartbeat loop & orchestration
+│   │   ├── config.py           # Agent settings (control plane URL, etc.)
+│   │   ├── agent/
+│   │   │   ├── api.py          # HTTP client for control plane
+│   │   │   ├── launcher.py     # Command execution engine
+│   │   │   └── monitor.py      # Metrics collection
+│   │   └── device/
+│   │       ├── identity.py     # RSA keypair generation
+│   │       ├── info.py         # Hardware info gathering
+│   │       └── config.py       # Device config persistence
+│   ├── tests/                  # Agent unit tests
+│   ├── Dockerfile              # Lightweight runtime image
+│   └── requirements.txt         # httpx, cryptography, pydantic
+│
+├── infra/                       # Deployment configs
+│   ├── docker-compose.yml      # Local dev stack
+│   ├── kubernetes/             # K8s manifests
+│   └── terraform/              # AWS infrastructure
+│
+├── frontend/                    # Next.js dashboard (optional)
+│   ├── app/
+│   │   ├── devices/            # Device list & detail views
+│   │   ├── bundles/            # Bundle upload & browse
+│   │   └── deployments/        # Deployment creation & tracking
+│   └── components/
+│       ├── DeviceList.tsx
+│       ├── BundleUpload.tsx
+│       └── DeploymentForm.tsx
+│
+└── docs/
+    ├── architecture.md         # System design deep-dive
+    ├── api-spec.md            # API endpoint reference
+    ├── bundle-spec.md         # Bundle format & manifest schema
+    └── deployment-guide.md    # Step-by-step deployment instructions
+```
 
 ---
 
-## High-Level Roadmap
+## 🚀 Quick Start
 
-Kernex development is organized into iterative phases:
+### Prerequisites
+- Python 3.11+
+- PostgreSQL 13+ (or SQLite for dev)
+- Docker & Docker Compose (optional, for containerized setup)
 
-### Phase 1: Foundation
-- Define core abstractions
-- Establish orchestration layer interfaces
-- Prototype basic task routing
-- Document system architecture
+### Installation
 
-### Phase 2: Core Systems
-- Implement memory layer abstractions
-- Build LLM adapter interfaces
-- Develop tool registration and execution framework
-- Add basic reasoning workflows
+```bash
+# Clone repository
+git clone https://github.com/GouravMukherjee/kernex.git
+cd kernex
 
-### Phase 3: Integration & Testing
-- Validate end-to-end flows
-- Build example agents
-- Stress test composability
-- Iterate on developer experience
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\Activate.ps1
+```
 
-### Phase 4: Hardening
+### Run Control Plane
+
+```powershell
+cd control-plane
+
+# Set database URL (SQLite for dev)
+$env:DATABASE_URL="sqlite+aiosqlite:///./dev.db"
+
+# Start API server
+python -m app.main
+# → http://localhost:8000
+# → API docs: http://localhost:8000/docs
+```
+
+### Run Runtime Agent
+
+```powershell
+cd runtime
+
+# Point to control plane
+$env:CONTROL_PLANE_URL="http://localhost:8000/api/v1"
+
+# Start agent
+python -m kernex
+# → Generates device_key.pem (RSA4096)
+# → Caches device_id in device_config.json
+# → Enters heartbeat loop (60s interval, exponential backoff on failure)
+```
+
+### Docker Compose (Full Stack)
+
+```bash
+docker-compose -f infra/docker-compose.yml up -d
+# → Control plane: http://localhost:8000
+# → PostgreSQL: localhost:5432
+# → Runtime agents can connect and register
+```
+
+---
+
+## 💻 Development
+
+### Running Tests
+
+```bash
+# Test control plane
+pytest control-plane/tests/ -v
+
+# Test runtime
+pytest runtime/tests/ -v
+```
+
+### Code Style
+
+```bash
+# Format code
+black control-plane/ runtime/
+
+# Lint
+flake8 control-plane/ runtime/
+
+# Type checking
+mypy control-plane/ runtime/
+```
+
+### Database Migrations
+
+```bash
+cd control-plane
+
+# Generate migration (after model changes)
+alembic revision --autogenerate -m "Add new_field to Device"
+
+# Apply migrations
+alembic upgrade head
+```
+
+---
+
+## 📊 API Overview
+
+### Device Registration
+```http
+POST /api/v1/devices/register
+Content-Type: application/json
+
+{
+  "public_key": "-----BEGIN PUBLIC KEY-----\n...",
+  "hardware_metadata": {
+    "cpu_cores": 4,
+    "memory_mb": 8192,
+    "device_type": "edge-server"
+  }
+}
+
+→ 200 OK
+{
+  "device_id": "dev_abc123xyz",
+  "public_key": "...",
+  "created_at": "2026-01-14T10:30:00Z"
+}
+```
+
+### Device Heartbeat
+```http
+POST /api/v1/devices/dev_abc123xyz/heartbeat
+Content-Type: application/json
+
+{
+  "agent_version": "0.1.0",
+  "memory_mb": 4096,
+  "cpu_pct": 35.2,
+  "status": "healthy"
+}
+
+→ 200 OK
+{
+  "commands": [
+    {
+      "type": "deploy",
+      "deployment_id": "dpl_456",
+      "bundle_version": "1.2.3"
+    }
+  ]
+}
+```
+
+### Bundle Upload
+```http
+POST /api/v1/bundles/upload
+Content-Type: multipart/form-data
+
+form:
+  version: 1.2.3
+  manifest: {"model": "qwen-1.5b", "..."}
+  file: <bundle.tar.gz>
+
+→ 201 Created
+{
+  "version": "1.2.3",
+  "checksum_sha256": "abc123...",
+  "storage_path": "./data/bundles/1.2.3-bundle.tar.gz"
+}
+```
+
+### Create Deployment
+```http
+POST /api/v1/deployments
+Content-Type: application/json
+
+{
+  "bundle_version": "1.2.3",
+  "target_device_ids": ["dev_abc123xyz", "dev_def456uvw"]
+}
+
+→ 201 Created
+{
+  "deployment_id": "dpl_789",
+  "bundle_version": "1.2.3",
+  "target_device_ids": [...],
+  "status": "pending"
+}
+```
+
+---
+
+## 🔐 Security & Privacy
+
+- 🔒 **Device Identity**: RSA4096 keypairs generated locally, public key registered once
+- 🛡️ **Bundle Integrity**: SHA256 checksums verified before deployment
+- 🔐 **Encrypted Configs**: Device identity persisted securely
+- 📋 **Audit Logging**: All device registrations, heartbeats, and deployments logged
+- ⚙️ **Rate Limiting**: (Planned) Heartbeat request throttling per device
+- 🔑 **Authentication**: (Planned) JWT tokens for API users, RSA signatures for devices
+
+---
+
+## 📊 Current Status
+
+Kernex is **functional and under active development** toward production readiness.
+
+- ✅ Device registration & identity management
+- ✅ Heartbeat polling with exponential backoff
+- ✅ Bundle versioning & storage
+- ✅ Deployment targeting & command generation
+- 🧪 Command execution on runtime (in progress)
+- 🚧 Bundle download/extraction logic
+- 🚧 Rollback mechanisms
+- 🚧 API authentication & authorization
+- 🚧 Production observability stack
+
+**Latest updates**: See [CHANGELOG.md](CHANGELOG.md)
+
+---
+
+## 🛣️ Roadmap
+
+### Slice 1: Device Registration ✅
+- [x] Device registration endpoint
+- [x] RSA keypair generation
+- [x] Device metadata collection
+
+### Slice 2: Heartbeat & Command Polling ✅
+- [x] Heartbeat endpoint with metrics
+- [x] Command response generation
+- [x] Exponential backoff on failures
+
+### Slice 3: Bundle Management 🚧
+- [x] Bundle upload & versioning
+- [ ] Bundle download on device
+- [ ] SHA256 verification
+- [ ] Manifest processing
+
+### Slice 4: Deployment Execution 🚧
+- [ ] Command executor on device
+- [ ] Model/bundle loading
+- [ ] Status reporting to control plane
+
+### Slice 5: Advanced Features 📅
+- [ ] Rollback mechanisms
+- [ ] Multi-bundle deployments
+- [ ] Scheduled deployments
+- [ ] Health checks & auto-recovery
+
+### Phase: Production Hardening
+- [ ] API authentication (JWT + RSA signatures)
+- [ ] Rate limiting & DDoS protection
+- [ ] Structured logging & error tracking
+- [ ] Prometheus metrics & alerting
+- [ ] Database connection pooling & tuning
+- [ ] Blue-green deployment strategy
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! Please follow:
+
+1. **Branch from main** for new features/fixes
+2. **Write tests** for new functionality
+3. **Update docs** in `docs/` folder
+4. **Follow code style** (Black, flake8, mypy passing)
+5. **Commit messages** should be clear and descriptive
+
+---
+
+## 📚 Documentation
+
+- **[Architecture Deep Dive](docs/architecture.md)** – System design & component interactions
+- **[API Specification](docs/api-spec.md)** – Complete endpoint reference
+- **[Bundle Format](docs/bundle-spec.md)** – Bundle structure & manifest schema
+- **[Deployment Guide](docs/deployment-guide.md)** – Production setup & best practices
+- **[Troubleshooting](docs/troubleshooting.md)** – Common issues & solutions
+
+---
+
+## 📜 License
+
+MIT License – See [LICENSE](LICENSE) for details.
+
+Free to use, modify, and distribute. Attribution appreciated.
+
+---
+
+**Last updated**: January 2026  
+**Maintained by**: Kernex Team  
+**Status**: 🚀 Active Development – Production readiness in progress
 - Performance optimization
 - Observability and logging
 - Security and safety mechanisms
@@ -209,380 +486,4 @@ Contribution guidelines will be established once the core architecture stabilize
 
 MIT License. See [LICENSE](LICENSE) file for details.
 
----
 
-## 🧠 Core Philosophy
-
-Kernex is built around a few fundamental principles:
-
-- **Modularity First** – Every component should be swappable and independently testable
-- **Model-Agnostic** – Works seamlessly with local LLMs, cloud APIs, or hybrid setups
-- **Composable Intelligence** – Agents, tools, memory, and reasoning logic are independent layers
-- **Developer-Centric** – Readable code, clear abstractions, minimal magic, maximum control
-- **Privacy-First** – Local execution by default, optional cloud integration
-
----
-
-## 🏗️ Architecture
-
-Kernex is structured into loosely coupled, composable layers:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      USER INTERFACES                        │
-│              (CLI, API, Web UI, Voice, etc.)                │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────┐
-│                    ORCHESTRATOR                             │
-│         (Task routing, agent control, workflows)            │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────┐
-│                   INTELLIGENCE LAYER                        │
-│    (LLMs, reasoning engines, planning, decision-making)     │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────┐
-│                    MEMORY SYSTEM                            │
-│   (Short-term context, long-term storage, embeddings)       │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────┐
-│                    TOOLING LAYER                            │
-│     (APIs, system tools, plugins, integrations)             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-Each layer:
-- ✅ Can evolve independently without breaking others
-- ✅ Has clear, well-defined interfaces
-- ✅ Is designed for extension and customization
-- ✅ Follows separation of concerns principles
-
----
-
-## ✨ Key Features (Planned & In-Progress)
-
-### Intelligence
-- 🔌 **Pluggable LLM Backends** – Local models, OpenAI, Anthropic, open-source alternatives
-- 🧠 **Multi-Agent Orchestration** – Coordinate multiple agents for complex tasks
-- 📊 **Reasoning Engine** – Chain-of-thought, tree-of-thought, and custom reasoning patterns
-- 🎯 **Planning & Task Decomposition** – Break complex goals into executable steps
-
-### Memory
-- 💾 **Persistent Memory System** – Combine short-term context with long-term storage
-- 🔍 **Vector Embeddings** – Semantic search across knowledge bases
-- 📚 **Knowledge Graphs** – Structure relationships between concepts
-- 🎓 **Learning & Adaptation** – Improve performance over time based on interactions
-
-### Execution
-- 🛠️ **Tool / Plugin Architecture** – Extensible system for adding new capabilities
-- ⚡ **Async-First Design** – High-performance, non-blocking operations
-- 🔐 **Security Framework** – Built-in isolation, sandboxing, and permission model
-- 📝 **Audit & Tracing** – Complete visibility into agent decisions and actions
-
-### Developer Experience
-- 🔐 **Privacy-First Design** – Local-first by default, transparent data handling
-- ⚙️ **Config-Driven Behavior** – Minimal code, maximum flexibility
-- 🧪 **Experimental Sandbox** – Safe environment for AI research and prototyping
-- 📖 **Clear Documentation** – Practical examples and design walkthroughs
-
----
-
-## 📁 Project Structure
-
-```
-kernex/
-│
-├── core/                    # Core engine & orchestration logic
-│   ├── engine.py           # Main AI engine
-│   ├── orchestrator.py     # Task routing & agent control
-│   └── interfaces.py       # Core abstractions
-│
-├── intelligence/           # LLM & reasoning layer
-│   ├── models/             # LLM wrappers & adapters
-│   ├── providers/          # API clients (OpenAI, Anthropic, etc.)
-│   └── reasoning/          # Reasoning patterns & chains
-│
-├── memory/                 # Memory system
-│   ├── store.py            # Memory interfaces
-│   ├── embeddings.py       # Vector embedding logic
-│   └── vector_db/          # Vector database integrations
-│
-├── tools/                  # Tool & plugin system
-│   ├── registry.py         # Tool registration
-│   ├── builtin/            # Built-in tools
-│   └── sandbox.py          # Execution sandbox
-│
-├── interfaces/             # External interfaces
-│   ├── cli/                # Command-line interface
-│   ├── api/                # REST API (FastAPI)
-│   └── voice/              # Voice input/output
-│
-├── config/                 # Configuration system
-│   ├── settings.py         # Config management
-│   └── profiles/           # Preset configurations
-│
-├── agents/                 # Example agents
-│   ├── research_agent.py   # Research & analysis
-│   ├── coding_agent.py     # Code generation & debugging
-│   └── reasoning_agent.py  # General reasoning
-│
-└── docs/                   # Documentation
-    ├── architecture.md     # Design deep-dive
-    ├── quickstart.md       # Getting started
-    └── examples/           # Usage examples
-```
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Python 3.11+**
-- **PostgreSQL 13+** (optional, for persistent storage)
-- **CUDA/Metal** (optional, for local LLM acceleration)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/kernex.git
-cd kernex
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Configuration
-
-```bash
-# Create config file
-cp config/default.yaml config/local.yaml
-
-# Edit configuration (set your LLM provider, memory backend, etc.)
-# - LLM_PROVIDER: "openai" | "local" | "anthropic"
-# - MEMORY_BACKEND: "sqlite" | "postgres"
-# - ENABLE_SANDBOX: true | false
-```
-
-### Run the CLI
-
-```bash
-# Start interactive Kernex CLI
-python -m kernex cli
-
-# Example:
-> kernex> research "latest breakthroughs in AI safety"
-> kernex> code "write a Python function to calculate fibonacci"
-> kernex> analyze "pros and cons of microservices architecture"
-```
-
-### Start the API Server
-
-```bash
-cd interfaces/api
-python -m uvicorn main:app --reload
-
-# Visit http://localhost:8000/docs for interactive API explorer
-```
-
----
-
-## 💻 Development
-
-### Running Tests
-
-```bash
-pytest tests/ -v
-```
-
-### Code Quality
-
-```bash
-# Format code
-black kernex/ tests/
-
-# Lint
-flake8 kernex/ tests/
-
-# Type checking
-mypy kernex/
-```
-
-### Building Documentation
-
-```bash
-cd docs
-pip install sphinx
-make html
-```
-
----
-
-## 🎯 Key Use Cases
-
-### 1. **Research Agent**
-```python
-agent = kernex.create_agent(
-    model="local-llama2",
-    tools=["web_search", "pdf_reader", "code_executor"],
-    memory="long_term"
-)
-results = agent.research("quantum computing advances in 2026")
-```
-
-### 2. **Coding Assistant**
-```python
-coder = kernex.create_agent(
-    model="openai/gpt-4",
-    tools=["code_analyzer", "git", "test_runner", "debugger"],
-    memory="project_context"
-)
-coder.generate_code("REST API for user management")
-```
-
-### 3. **Data Analysis Pipeline**
-```python
-analyst = kernex.create_agent(
-    model="local-mistral",
-    tools=["pandas", "matplotlib", "sql_executor"],
-    memory="analytical_context"
-)
-analyst.analyze("sales data for Q4 2025")
-```
-
----
-
-## 🔐 Security & Privacy
-
-- 🔒 **Local Execution First** – Run LLMs locally whenever possible
-- 🛡️ **Tool Sandboxing** – Isolate tool execution from core system
-- 🔐 **Encrypted Storage** – Sensitive data at rest and in transit
-- 📋 **Audit Logging** – Track all agent decisions and tool executions
-- ⚖️ **Permission Model** – Fine-grained control over tool access
-
----
-
-## 📊 Current Status
-
-Kernex is **early-stage and under active development**.
-
-- ✅ Architecture & core abstractions defined
-- ✅ Basic engine & orchestrator working
-- 🧪 Prototyping memory layer
-- 🧱 Building agent examples
-- 🚧 Still pre-1.0 (APIs may change)
-- 📅 Targeting feature-complete v1.0 by Q2 2026
-
-**Latest updates**: See [CHANGELOG.md](CHANGELOG.md)
-
----
-
-## 🛣️ Roadmap
-
-### Phase 1: Foundation (In Progress) ✅
-- [x] Core engine architecture
-- [x] Modular orchestrator
-- [x] Basic LLM integration
-- [ ] Memory abstractions
-- [ ] Tool registration system
-
-### Phase 2: Intelligence Layer (Next)
-- [ ] Multi-agent coordination
-- [ ] Advanced reasoning patterns
-- [ ] Semantic search & embeddings
-- [ ] Agent introspection & debugging
-
-### Phase 3: Production Ready
-- [ ] Vector database integrations
-- [ ] Distributed execution
-- [ ] Advanced monitoring & observability
-- [ ] Kubernetes operators
-
-### Phase 4: Ecosystem
-- [ ] Community tool marketplace
-- [ ] Pre-built agent templates
-- [ ] GUI builder
-- [ ] Enterprise features
-
----
-
-## 🤝 Contributing
-
-Kernex is currently a focused exploration, but contributions are welcome!
-
-### Getting Involved
-
-1. **Star the repo** if the vision resonates ⭐
-2. **Open issues** for ideas, questions, or suggestions
-3. **Submit PRs** for bug fixes or small improvements
-4. **Discuss design** in [Discussions](https://github.com/your-username/kernex/discussions)
-
-### Development Guidelines
-
-- Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) + [Black](https://github.com/psf/black)
-- Write tests for new features
-- Update documentation
-- Keep commit messages clear and descriptive
-
----
-
-## 📚 Documentation
-
-- **[Architecture Deep Dive](docs/architecture.md)** – System design & philosophy
-- **[Quick Start Guide](docs/quickstart.md)** – Get up and running
-- **[API Reference](docs/api.md)** – Complete API documentation
-- **[Agent Development](docs/agents.md)** – Building custom agents
-- **[Tool Development](docs/tools.md)** – Creating new tools
-- **[Examples](docs/examples/)** – Practical use cases
-
----
-
-## 💬 Discussion & Support
-
-- **GitHub Issues** – Bug reports, feature requests
-- **GitHub Discussions** – Architecture questions, design feedback
-- **Email** – kernex@example.com (for security issues)
-
----
-
-## 📜 License
-
-MIT License – See [LICENSE](LICENSE) for details.
-
-Free to use, modify, and distribute. Attribution appreciated but not required.
-
----
-
-## 🌟 Special Thanks
-
-Built with inspiration from:
-- OpenAI's agent research
-- LangChain's modular approach
-- AutoGPT's autonomous reasoning
-- Claude's constitutional AI
-
----
-
-## 🔮 The Big Picture
-
-Kernex isn't about shipping *another* AI app.
-
-It's about building the **core infrastructure** that intelligent systems can stand on. The tools, patterns, and abstractions that make it *trivial* to add reasoning, memory, and autonomy to any application.
-
-> *"Build the engine first. The vehicles will follow."*
-
-**Join us in reimagining how AI systems are built.** 🚀
-
----
-
-**Last updated**: January 2026  
-**Maintained by**: Kernex Team  
-**Status**: 🚧 Early Stage – Expect changes & breaking updates
