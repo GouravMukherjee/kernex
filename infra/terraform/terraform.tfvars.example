@@ -1,0 +1,11 @@
+# Copy this file to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars to Git (it contains secrets)
+
+digitalocean_token         = "dop_v1_xxxxxxxxxxxxxxxxxxxx"
+app_platform_github_repo   = "https://github.com/GouravMukherjee/kernex"
+github_token               = "ghp_xxxxxxxxxxxxxxxxxxxx"
+project_name               = "kernex"
+region                     = "nyc3"  # nyc3, sfo3, lon1, etc.
+environment                = "production"
+postgres_version           = "15"
+postgres_size              = "db-s-2vcpu-2gb"  # Scale up as needed
