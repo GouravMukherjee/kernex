@@ -43,7 +43,7 @@ async def health() -> dict:
 
 
 # Health check at API prefix for integration testing
-@app.get(f"{settings.api_prefix}/health")
+@app.get("/api/v1/health")
 async def api_health() -> dict:
     return {"status": "ok"}
 
