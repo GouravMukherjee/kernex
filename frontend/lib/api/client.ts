@@ -1,7 +1,10 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { toast } from 'sonner';
 
+// Backend API URL - set NEXT_PUBLIC_API_URL environment variable for production
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
+console.log('🔗 API Base URL:', API_BASE_URL);
 
 /**
  * Create and configure axios instance

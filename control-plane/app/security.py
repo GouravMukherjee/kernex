@@ -68,14 +68,27 @@ class InputValidationMiddleware(BaseHTTPMiddleware):
 
 def setup_cors(app):
     """Setup CORS with security best practices"""
+    # Allow local development and production Vercel deployments
+    allowed_origins = [
+        "http://localhost:3000",  # Local dev frontend
+        "http://localhost:8000",  # Local API
+        "https://localhost:3000",
+        "https://localhost:8000",
+    ]
+    
+    # Add Vercel deployment URL from environment variable
+    import os
+    vercel_url = os.getenv("FRONTEND_URL")
+    if vercel_url:
+        allowed_origins.append(vercel_url)
+    
+    # Allow all vercel.app subdomains in development
+    if os.getenv("ENVIRONMENT") == "development":
+        allowed_origins.append("https://*.vercel.app")
+    
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "http://localhost:3000",  # Local dev
-            "http://localhost:8000",  # Local API
-            "https://localhost:3000",
-            "https://localhost:8000",
-        ],
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allow_headers=["*"],

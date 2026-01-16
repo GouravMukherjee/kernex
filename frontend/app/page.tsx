@@ -26,7 +26,7 @@ export default function DashboardPage(): JSX.Element {
     <Container>
       {/* Header */}
       <PageHeader
-        title="Dashboard"
+        title="Kernex"
         description="Manage your edge AI devices and deployments"
       >
         <Button>
