@@ -42,6 +42,12 @@ async def health() -> dict:
     return {"status": "ok"}
 
 
+# Health check at API prefix for integration testing
+@app.get(f"{settings.api_prefix}/health")
+async def api_health() -> dict:
+    return {"status": "ok"}
+
+
 app.include_router(api_router, prefix=settings.api_prefix)
 
 
