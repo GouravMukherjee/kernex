@@ -8,49 +8,64 @@ output "region" {
   value       = var.region
 }
 
-output "control_plane_url" {
-  description = "Control Plane API URL"
-  value       = "https://${digitalocean_app.kernex_app.default_ingress}/api/v1"
+output "app_url" {
+  description = "DigitalOcean App Platform URL"
+  value       = digitalocean_app.kernex_app.default_ingress
 }
 
-output "frontend_url" {
-  description = "Frontend dashboard URL"
-  value       = "https://${digitalocean_app.kernex_app.default_ingress}"
+output "database_host" {
+  description = "PostgreSQL database host"
+  value       = digitalocean_database_cluster.kernex_postgres.host
 }
 
-output "database_credentials" {
-  description = "Database credentials (SENSITIVE)"
-  value = {
-    host               = digitalocean_database_cluster.kernex_postgres.host
-    port               = digitalocean_database_cluster.kernex_postgres.port
-    username           = digitalocean_database_user.kernex_app_user.name
-    password           = digitalocean_database_user.kernex_app_user.password
-    database           = digitalocean_database_db.kernex_db.name
-    connection_string  = "postgresql+asyncpg://${digitalocean_database_user.kernex_app_user.name}:${digitalocean_database_user.kernex_app_user.password}@${digitalocean_database_cluster.kernex_postgres.host}:${digitalocean_database_cluster.kernex_postgres.port}/${digitalocean_database_db.kernex_db.name}?sslmode=require"
-  }
-  sensitive = true
+output "database_user" {
+  description = "PostgreSQL database user"
+  value       = digitalocean_database_user.kernex_app_user.name
 }
 
-output "storage_credentials" {
-  description = "Storage (Spaces) credentials (SENSITIVE)"
-  value = {
-    bucket_name       = digitalocean_spaces_bucket.kernex_bundles.name
-    region            = digitalocean_spaces_bucket.kernex_bundles.region
-    endpoint          = "${digitalocean_spaces_bucket.kernex_bundles.region}.digitaloceanspaces.com"
-    access_key_id     = digitalocean_spaces_access_key.kernex_app_key.access_key
-    secret_access_key = digitalocean_spaces_access_key.kernex_app_key.secret_access_key
-  }
-  sensitive = true
+output "database_password" {
+  description = "PostgreSQL database password"
+  value       = digitalocean_database_user.kernex_app_user.password
+  sensitive   = true
+}
+
+output "database_name" {
+  description = "PostgreSQL database name"
+  value       = digitalocean_database_db.kernex_db.name
+}
+
+output "database_connection_string" {
+  description = "Full PostgreSQL connection string for asyncpg"
+  value       = "postgresql+asyncpg://${digitalocean_database_user.kernex_app_user.name}:${digitalocean_database_user.kernex_app_user.password}@${digitalocean_database_cluster.kernex_postgres.host}:${digitalocean_database_cluster.kernex_postgres.port}/${digitalocean_database_db.kernex_db.name}?sslmode=require"
+  sensitive   = true
 }
 
 output "summary" {
   description = "Deployment summary"
   value = {
-    app_url                = "https://${digitalocean_app.kernex_app.default_ingress}"
-    control_plane_url      = "https://${digitalocean_app.kernex_app.default_ingress}/api/v1"
-    database_host          = digitalocean_database_cluster.kernex_postgres.host
-    storage_bucket         = digitalocean_spaces_bucket.kernex_bundles.name
-    environment            = var.environment
-    region                 = var.region
+    app_url          = digitalocean_app.kernex_app.default_ingress
+    database_host    = digitalocean_database_cluster.kernex_postgres.host
+    database_port    = digitalocean_database_cluster.kernex_postgres.port
+    environment      = var.environment
+    region           = var.region
   }
+}
+
+output "next_steps" {
+  description = "Next steps after deployment"
+  value       = <<-EOT
+1. Configure App Platform services in DigitalOcean Console:
+   - Set DATABASE_URL environment variable
+   - Configure build commands for control-plane and frontend
+   - Set up routing
+
+2. Create Spaces bucket for bundle storage:
+   - Go to Account > API > Spaces Keys
+   - Create new access key
+   - Add to control plane app
+
+3. Deploy your app:
+   - Push to GitHub
+   - App Platform will auto-deploy on push
+  EOT
 }

@@ -1,11 +1,30 @@
-# Copy this file to terraform.tfvars and fill in your values
-# DO NOT commit terraform.tfvars to Git (it contains secrets)
+# Kernex Terraform Variables Template
+# Copy this file to terraform.tfvars and fill in your actual values
+# NEVER commit terraform.tfvars - it's in .gitignore for security
 
-digitalocean_token         = "dop_v1_xxxxxxxxxxxxxxxxxxxx"
-app_platform_github_repo   = "https://github.com/GouravMukherjee/kernex"
-github_token               = "ghp_xxxxxxxxxxxxxxxxxxxx"
-project_name               = "kernex"
-region                     = "nyc3"  # nyc3, sfo3, lon1, etc.
-environment                = "production"
-postgres_version           = "15"
-postgres_size              = "db-s-2vcpu-2gb"  # Scale up as needed
+# DigitalOcean Personal Access Token
+# Get from: https://cloud.digitalocean.com/account/api/tokens
+# Required permissions: Read/Write for App Platform, Databases, Spaces
+digitalocean_token = "PUT_YOUR_DO_TOKEN_HERE"
+
+# GitHub repository URL for App Platform deployment
+app_platform_github_repo = "https://github.com/YOUR_USERNAME/YOUR_REPO"
+
+# GitHub Personal Access Token for App Platform to access private repos
+# Get from: https://github.com/settings/tokens
+# Required scopes: repo (full control of private repositories)
+github_token = "PUT_YOUR_GITHUB_PAT_HERE"
+
+# Project configuration
+project_name     = "kernex"
+region           = "sfo3"  # nyc3, sfo3, lon1, ams3, sgp1, fra1, etc.
+environment      = "production"  # Must be lowercase
+
+# PostgreSQL configuration
+postgres_version = "15"
+postgres_size    = "db-s-2vcpu-4gb"  # db-s-1vcpu-2gb, db-s-2vcpu-4gb, db-s-4vcpu-8gb
+
+# RECOMMENDED: Use environment variables instead of this file
+# PowerShell:
+#   $env:TF_VAR_digitalocean_token = "your_token_here"
+#   $env:TF_VAR_github_token = "your_token_here"

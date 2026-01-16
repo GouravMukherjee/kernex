@@ -1,18 +1,11 @@
 # DigitalOcean Managed PostgreSQL Database
 resource "digitalocean_database_cluster" "kernex_postgres" {
-  name              = "${var.project_name}-db-${var.environment}"
-  engine            = "pg"
-  version           = var.postgres_version
-  region            = var.region
-  node_count        = 1
-  size              = var.postgres_size
-  storage_mb        = 61440 # 60GB
-  backup_restore_name = null
-
-  tags = [
-    "kernex",
-    var.environment
-  ]
+  name       = "${var.project_name}-db-${var.environment}"
+  engine     = "pg"
+  version    = var.postgres_version
+  region     = var.region
+  node_count = 1
+  size       = var.postgres_size
 }
 
 # Database user for Kernex
@@ -37,11 +30,7 @@ resource "digitalocean_database_firewall" "kernex_fw" {
   }
 }
 
-# Export connection string as secret for App Platform
-resource "digitalocean_app_spec_output" "postgres_connection_string" {
-  # This value will be available to App Platform services
-  value = "postgresql+asyncpg://${digitalocean_database_user.kernex_app_user.name}:${digitalocean_database_user.kernex_app_user.password}@${digitalocean_database_cluster.kernex_postgres.host}:${digitalocean_database_cluster.kernex_postgres.port}/${digitalocean_database_db.kernex_db.name}?sslmode=require"
-}
+
 
 output "postgres_host" {
   description = "PostgreSQL cluster host"

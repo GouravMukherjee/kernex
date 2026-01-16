@@ -1,0 +1,74 @@
+# ---- Frontend (Next.js) ----
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/build/
+frontend/node_modules/
+kernex-frontend.bundle
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- Python ----
+runtime/.venv/
+.venv/
+__pycache__/
+*.pyc
+
+# ---- Env / local ----
+.env
+.env.*
+CURRENT_STATUS.txt
+.DS_Store
+
+# ---- Secrets (NEVER COMMIT) ----
+secrets/
+*.secrets.txt
+*LOCAL_SECRETS*
+infra/terraform/terraform.tfvars
+
+# ---- Python ----
+.venv/
+runtime/.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ---- Next.js ----
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+frontend/dist/
+frontend/build/
+
+# ---- Terraform ----
+infra/terraform/.terraform/
+infra/terraform/.terraform.lock.hcl
+infra/terraform/terraform.tfstate
+infra/terraform/terraform.tfstate.*
+infra/terraform/terraform.tfstate.backup
+infra/terraform/tfplan
+infra/terraform/*.tfplan
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+
+# ---- Bundles/artifacts ----
+control-plane/data/bundles/
+*.tar.gz
+*.tgz
+*.zip
+*.bundle
+# ---- LOCAL SECRETS (NEVER COMMIT) ----
+secrets/
+*LOCAL_SECRETS*
+*.secrets.txt
+infra/terraform/terraform.tfvars
