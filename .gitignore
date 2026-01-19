@@ -24,6 +24,9 @@ __pycache__/
 .env.*
 CURRENT_STATUS.txt
 .DS_Store
+runtime/device_config.json
+device_key.pem
+.kernex/
 
 # ---- Secrets (NEVER COMMIT) ----
 secrets/
