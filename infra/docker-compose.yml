@@ -5,19 +5,23 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: kernex-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: kernex
-      POSTGRES_PASSWORD: kernex_dev_password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-kernex_secure_password}
       POSTGRES_DB: kernex_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kernex"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - kernex-network
 
   # Control Plane API
   api:
@@ -25,48 +29,72 @@ services:
       context: ./control-plane
       dockerfile: Dockerfile
     container_name: kernex-api
+    restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+asyncpg://kernex:kernex_dev_password@postgres:5432/kernex_db
+      DATABASE_URL: postgresql+asyncpg://kernex:${DB_PASSWORD:-kernex_secure_password}@postgres:5432/kernex_db
       APP_NAME: "Kernex Control Plane"
       API_PREFIX: "/api/v1"
       BUNDLE_STORAGE_PATH: /data/bundles
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8000,https://kernex-ai.vercel.app}
     ports:
       - "8000:8000"
     volumes:
       - ./control-plane/data:/data
-      - ./control-plane/app:/app/app
+      - ./control-plane/logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - kernex-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-  # Frontend (Next.js)
-  frontend:
+  # Runtime Agent (Device Registration)
+  runtime:
     build:
-      context: ./frontend
+      context: ./runtime
       dockerfile: Dockerfile
-    container_name: kernex-frontend
+    container_name: kernex-runtime
+    restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
-    ports:
-      - "3000:3000"
+      CONTROL_PLANE_URL: ${CONTROL_PLANE_URL:-http://api:8000/api/v1}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      HEARTBEAT_INTERVAL: ${HEARTBEAT_INTERVAL:-60}
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./runtime/.kernex:/app/.kernex
+      - ./runtime/logs:/app/logs
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    networks:
+      - kernex-network
 
-  # Optional: PgAdmin for database management
+  # PgAdmin for database management (optional, for development/debugging)
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: kernex-pgadmin
+    restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@kernex.local
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@kernex.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
     ports:
       - "5050:80"
     depends_on:
       - postgres
+    networks:
+      - kernex-network
 
 volumes:
   postgres_data:
+    driver: local
+
+networks:
+  kernex-network:
+    driver: bridge

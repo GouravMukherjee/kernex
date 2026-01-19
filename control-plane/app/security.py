@@ -74,9 +74,10 @@ def setup_cors(app):
         "http://localhost:8000",  # Local API
         "https://localhost:3000",
         "https://localhost:8000",
+        "https://kernex-ai.vercel.app",  # Production Vercel frontend
     ]
     
-    # Add Vercel deployment URL from environment variable
+    # Add Vercel deployment URL from environment variable (for custom domains)
     import os
     vercel_url = os.getenv("FRONTEND_URL")
     if vercel_url:
