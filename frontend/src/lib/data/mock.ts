@@ -213,38 +213,101 @@ export const mockSuccessRate: SuccessRateData = {
   failed: 3,
 }
 
-// Simulate async data fetching
-export const fetchDevices = (): Promise<Device[]> => {
+// Simulate async data fetching with fallback to mock data
+import {
+  fetchDevicesFromAPI,
+  fetchBundlesFromAPI,
+  fetchDeploymentsFromAPI,
+  fetchMetricsFromAPI,
+  fetchChartDataFromAPI,
+  fetchSuccessRateFromAPI,
+  checkBackendHealth,
+} from "@/lib/api/services"
+
+let backendAvailable: boolean | null = null
+
+// Cache health check result for 30 seconds
+async function isBackendHealthy(): Promise<boolean> {
+  if (backendAvailable === null) {
+    backendAvailable = await checkBackendHealth()
+  }
+  return backendAvailable
+}
+
+export const fetchDevices = async (): Promise<Device[]> => {
+  try {
+    if (await isBackendHealthy()) {
+      return await fetchDevicesFromAPI()
+    }
+  } catch (error) {
+    console.warn("API call failed, falling back to mock data:", error)
+  }
+  // Fallback to mock data
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockDevices), 300)
   })
 }
 
-export const fetchBundles = (): Promise<Bundle[]> => {
+export const fetchBundles = async (): Promise<Bundle[]> => {
+  try {
+    if (await isBackendHealthy()) {
+      return await fetchBundlesFromAPI()
+    }
+  } catch (error) {
+    console.warn("API call failed, falling back to mock data:", error)
+  }
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockBundles), 250)
   })
 }
 
-export const fetchDeployments = (): Promise<Deployment[]> => {
+export const fetchDeployments = async (): Promise<Deployment[]> => {
+  try {
+    if (await isBackendHealthy()) {
+      return await fetchDeploymentsFromAPI()
+    }
+  } catch (error) {
+    console.warn("API call failed, falling back to mock data:", error)
+  }
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockDeployments), 280)
   })
 }
 
-export const fetchMetrics = (): Promise<Metric[]> => {
+export const fetchMetrics = async (): Promise<Metric[]> => {
+  try {
+    if (await isBackendHealthy()) {
+      return await fetchMetricsFromAPI()
+    }
+  } catch (error) {
+    console.warn("API call failed, falling back to mock data:", error)
+  }
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockMetrics), 200)
   })
 }
 
-export const fetchChartData = (): Promise<ChartData[]> => {
+export const fetchChartData = async (): Promise<ChartData[]> => {
+  try {
+    if (await isBackendHealthy()) {
+      return await fetchChartDataFromAPI()
+    }
+  } catch (error) {
+    console.warn("API call failed, falling back to mock data:", error)
+  }
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockChartData), 220)
   })
 }
 
-export const fetchSuccessRate = (): Promise<SuccessRateData> => {
+export const fetchSuccessRate = async (): Promise<SuccessRateData> => {
+  try {
+    if (await isBackendHealthy()) {
+      return await fetchSuccessRateFromAPI()
+    }
+  } catch (error) {
+    console.warn("API call failed, falling back to mock data:", error)
+  }
   return new Promise((resolve) => {
     setTimeout(() => resolve(mockSuccessRate), 200)
   })
