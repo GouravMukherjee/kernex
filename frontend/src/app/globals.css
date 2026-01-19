@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 30% 4%;
+    --foreground: 223 10% 92%;
+
+    --card: 220 30% 5%;
+    --card-foreground: 223 10% 92%;
+
+    --popover: 220 30% 6%;
+    --popover-foreground: 223 10% 92%;
+
+    --primary: 230 80% 68%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 20% 8%;
+    --secondary-foreground: 223 10% 92%;
+
+    --muted: 220 20% 8%;
+    --muted-foreground: 223 10% 62%;
+
+    --accent: 230 80% 68%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 65%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: rgba(255, 255, 255, 0.06);
+    --input: rgba(255, 255, 255, 0.06);
+    --ring: 230 80% 68%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-bg text-text font-sans antialiased;
+    background: radial-gradient(ellipse at top, #08090E 0%, #06070A 60%, #04050A 100%);
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Smooth transitions */
+* {
+  transition-duration: 0.18s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button, a, input, select {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+}

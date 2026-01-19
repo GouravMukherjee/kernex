@@ -1,82 +1,94 @@
-import type { Config } from 'tailwindcss';
+import type { Config } from "tailwindcss"
 
 const config = {
-  darkMode: ['class'],
+  darkMode: ["class"],
   content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
+  prefix: "",
   theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
     extend: {
       colors: {
-        background: {
-          base: '#0f0f0f',
-          elevated: '#1a1a1a',
-          hover: 'rgba(39, 39, 42, 0.3)',
-        },
-        border: {
-          default: 'rgba(39, 39, 42, 0.5)',
-          hover: 'rgba(63, 63, 70, 0.5)',
-        },
-        text: {
-          primary: '#ffffff',
-          secondary: '#a1a1a1',
-          tertiary: '#808080',
-          muted: '#525252',
-        },
-        status: {
-          online: '#10b981',
-          offline: '#71717a',
-          degraded: '#f59e0b',
-          error: '#ef4444',
-        },
+        border: "rgba(255, 255, 255, 0.03)",
+        "border-weak": "rgba(255, 255, 255, 0.02)",
+        input: "rgba(255, 255, 255, 0.04)",
+        ring: "rgba(91, 116, 255, 0.25)",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        bg: "#06070A",
+        "surface-1": "#0A0C10",
+        "surface-2": "#0E1117",
+        "surface-3": "#121621",
+        text: "rgba(220, 225, 235, 0.88)",
+        "text-muted": "rgba(220, 225, 235, 0.58)",
+        "text-dim": "rgba(220, 225, 235, 0.38)",
         accent: {
-          primary: '#2563eb',
-          hover: '#1d4ed8',
+          DEFAULT: "#4D63D8",
+          dark: "#3D4BA8",
         },
-      },
-      spacing: {
-        gutter: '1.5rem',
+        success: "#35C589",
+        warning: "#D4B760",
+        danger: "#CC6069",
+        primary: {
+          DEFAULT: "#5B74FF",
+          foreground: "#FFFFFF",
+        },
+        secondary: {
+          DEFAULT: "#0E1117",
+          foreground: "rgba(235, 238, 245, 0.92)",
+        },
+        destructive: {
+          DEFAULT: "#E06C75",
+          foreground: "#FFFFFF",
+        },
+        muted: {
+          DEFAULT: "#0E1117",
+          foreground: "rgba(235, 238, 245, 0.62)",
+        },
+        popover: {
+          DEFAULT: "#0E1117",
+          foreground: "rgba(235, 238, 245, 0.92)",
+        },
+        card: {
+          DEFAULT: "#0A0C10",
+          foreground: "rgba(235, 238, 245, 0.92)",
+        },
       },
       borderRadius: {
-        base: '12px',
-        sm: '8px',
-        xs: '6px',
-      },
-      fontSize: {
-        xs: ['12px', { lineHeight: '16px' }],
-        sm: ['14px', { lineHeight: '20px' }],
-        base: ['16px', { lineHeight: '24px' }],
-        lg: ['18px', { lineHeight: '28px' }],
-        xl: ['20px', { lineHeight: '28px' }],
-        '2xl': ['24px', { lineHeight: '32px' }],
-        '3xl': ['30px', { lineHeight: '36px' }],
-        '4xl': ['36px', { lineHeight: '40px' }],
+        lg: "0.75rem",
+        md: "0.625rem",
+        sm: "0.5rem",
       },
       fontFamily: {
-        sans: ['system-ui', 'sans-serif'],
-        mono: ['Courier New', 'monospace'],
-      },
-      boxShadow: {
-        sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-        base: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        glow: '0 0 20px rgba(37, 99, 235, 0.25)',
-      },
-      animation: {
-        'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
       },
       keyframes: {
-        'pulse-subtle': {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.7' },
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
-} satisfies Config;
+  plugins: [require("tailwindcss-animate")],
+} satisfies Config
 
-export default config;
+export default config
