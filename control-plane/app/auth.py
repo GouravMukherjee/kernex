@@ -4,15 +4,15 @@ from typing import Optional
 
 from passlib.context import CryptContext
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import String, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
+from app.config import get_settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+settings = get_settings()
 
 # JWT configuration
-SECRET_KEY = "your-secret-key-change-in-production"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+SECRET_KEY = settings.jwt_secret_key
+ALGORITHM = settings.jwt_algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 
 class User(BaseModel):
@@ -88,6 +88,6 @@ def decode_token(token: str) -> Optional[dict]:
         username: str = payload.get("sub")
         if username is None:
             return None
-        return {"username": username}
+        return {"username": username, "sub": username}
     except JWTError:
         return None

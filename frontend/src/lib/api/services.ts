@@ -1,6 +1,57 @@
 import apiClient from "./client"
 import { Device, Bundle, Deployment, SuccessRateData, ChartData, Metric } from "@/lib/data/mock"
 
+export interface LogEntry {
+  timestamp: string
+  level: "INFO" | "WARNING" | "ERROR"
+  message: string
+}
+
+export interface AuthTokenResponse {
+  access_token: string
+  token_type: string
+  expires_in: number
+}
+
+export interface DeviceConfig {
+  id: string
+  device_id: string
+  polling_interval: string
+  heartbeat_timeout: string
+  deploy_timeout: string
+  log_level: string
+  metadata_json?: Record<string, unknown> | null
+  version: string
+  updated_at: string
+  created_at: string
+}
+
+export interface DeviceBundleHistoryItem {
+  id: string
+  device_id: string
+  bundle_version: string
+  bundle_id: string
+  deployment_id?: string | null
+  status: string
+  error_message?: string | null
+  deployed_at: string
+  duration_seconds?: string | null
+}
+
+export interface RollbackResponse {
+  deployment_id: string
+  status: string
+  target_device_ids: string[]
+  bundle_version: string
+}
+
+function mapDeploymentStatus(status: string): "pending" | "in_progress" | "completed" | "failed" {
+  if (status === "success" || status === "completed") return "completed"
+  if (status === "failed") return "failed"
+  if (status === "in_progress") return "in_progress"
+  return "pending"
+}
+
 /**
  * DEVICES API
  */
@@ -78,7 +129,7 @@ export async function fetchDeploymentsFromAPI(): Promise<Deployment[]> {
       targetDevices: d.target_devices?.length || 0,
       successCount: d.target_devices?.filter((t: any) => t.status === "success")?.length || 0,
       failedCount: d.target_devices?.filter((t: any) => t.status === "failed")?.length || 0,
-      status: d.status as "pending" | "in_progress" | "completed" | "failed",
+      status: mapDeploymentStatus(d.status),
       startedAt: d.created_at || new Date().toISOString(),
       completedAt: d.completed_at,
     }))
@@ -222,5 +273,113 @@ export async function checkBackendHealth(): Promise<boolean> {
   } catch (error) {
     console.error("Backend health check failed:", error)
     return false
+  }
+}
+
+export async function uploadBundleToAPI(file: File, manifest: Record<string, unknown>): Promise<string> {
+  try {
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("manifest", JSON.stringify(manifest))
+    const response = await apiClient.post("/bundles", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    return response.data.bundle_id
+  } catch (error) {
+    console.error("Failed to upload bundle:", error)
+    throw error
+  }
+}
+
+export async function registerUser(username: string, email: string, password: string): Promise<void> {
+  try {
+    await apiClient.post("/auth/register", { username, email, password })
+  } catch (error) {
+    console.error("Failed to register user:", error)
+    throw error
+  }
+}
+
+export async function loginUser(username: string, password: string): Promise<AuthTokenResponse> {
+  try {
+    const response = await apiClient.post("/auth/login", { username, password })
+    return response.data as AuthTokenResponse
+  } catch (error) {
+    console.error("Failed to login user:", error)
+    throw error
+  }
+}
+
+export async function fetchDeviceConfigFromAPI(deviceId: string): Promise<DeviceConfig> {
+  try {
+    const response = await apiClient.get(`/devices/${deviceId}/config`)
+    return response.data as DeviceConfig
+  } catch (error) {
+    console.error("Failed to fetch device config:", error)
+    throw error
+  }
+}
+
+export async function updateDeviceConfigFromAPI(
+  deviceId: string,
+  payload: {
+    polling_interval: string
+    heartbeat_timeout: string
+    deploy_timeout: string
+    log_level: string
+    metadata_json?: Record<string, unknown>
+  }
+): Promise<DeviceConfig> {
+  try {
+    const response = await apiClient.put(`/devices/${deviceId}/config`, payload)
+    return response.data as DeviceConfig
+  } catch (error) {
+    console.error("Failed to update device config:", error)
+    throw error
+  }
+}
+
+export async function fetchDeviceBundleHistoryFromAPI(
+  deviceId: string,
+  limit = 20
+): Promise<DeviceBundleHistoryItem[]> {
+  try {
+    const response = await apiClient.get(`/devices/${deviceId}/bundle-history`, {
+      params: { limit },
+    })
+    return response.data as DeviceBundleHistoryItem[]
+  } catch (error) {
+    console.error("Failed to fetch bundle history:", error)
+    throw error
+  }
+}
+
+export async function createRollbackFromAPI(
+  bundleVersion: string,
+  targetDeviceIds: string[]
+): Promise<RollbackResponse> {
+  try {
+    const response = await apiClient.post("/devices/rollback", {
+      bundle_version: bundleVersion,
+      target_device_ids: targetDeviceIds,
+    })
+    return response.data as RollbackResponse
+  } catch (error) {
+    console.error("Failed to create rollback:", error)
+    throw error
+  }
+}
+
+export async function fetchLogsFromAPI(limit = 100): Promise<LogEntry[]> {
+  try {
+    const response = await apiClient.get("/logs", { params: { limit } })
+    return (response.data.logs || []).map((l: any) => ({
+      timestamp: l.timestamp || new Date().toISOString(),
+      level: (l.level || "INFO") as "INFO" | "WARNING" | "ERROR",
+      message: l.message || "",
+    }))
+  } catch (error) {
+    console.error("Failed to fetch logs from API:", error)
+    throw error
   }
 }

@@ -15,6 +15,15 @@ class Settings(BaseModel):
     bundle_storage_path: str = Field(
         default=os.getenv("BUNDLE_STORAGE_PATH", "./data/bundles")
     )
+    jwt_secret_key: str = Field(default=os.getenv("JWT_SECRET_KEY", "dev-only-secret-change-me"))
+    jwt_algorithm: str = Field(default=os.getenv("JWT_ALGORITHM", "HS256"))
+    access_token_expire_minutes: int = Field(
+        default=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    )
+    environment: str = Field(default=os.getenv("ENVIRONMENT", "development"))
+    require_admin_auth: bool = Field(
+        default=os.getenv("REQUIRE_ADMIN_AUTH", "").lower() in {"1", "true", "yes"}
+    )
 
 
 @lru_cache()

@@ -8,6 +8,11 @@
 
 ---
 
+## Documentation
+
+- Canonical deployment docs: `docs/current/VERCEL_DROPLET_CANONICAL.md`
+- Current docs index: `docs/current/INDEX.md`
+
 ## 🧠 Core Philosophy
 
 Kernex is built around fundamental principles for edge AI deployment:
@@ -485,5 +490,4 @@ Contribution guidelines will be established once the core architecture stabilize
 ## License
 
 MIT License. See [LICENSE](LICENSE) file for details.
-
 

@@ -225,10 +225,15 @@ import {
 } from "@/lib/api/services"
 
 let backendAvailable: boolean | null = null
+let lastHealthCheckAt = 0
+const HEALTH_CACHE_MS = 30000
+const USE_MOCK_DATA = process.env.NEXT_PUBLIC_USE_MOCK_DATA === "true"
 
 // Cache health check result for 30 seconds
 async function isBackendHealthy(): Promise<boolean> {
-  if (backendAvailable === null) {
+  const now = Date.now()
+  if (backendAvailable === null || now - lastHealthCheckAt > HEALTH_CACHE_MS) {
+    lastHealthCheckAt = now
     backendAvailable = await checkBackendHealth()
   }
   return backendAvailable
@@ -239,7 +244,13 @@ export const fetchDevices = async (): Promise<Device[]> => {
     if (await isBackendHealthy()) {
       return await fetchDevicesFromAPI()
     }
+    if (!USE_MOCK_DATA) {
+      throw new Error("Backend unavailable and mock mode is disabled")
+    }
   } catch (error) {
+    if (!USE_MOCK_DATA) {
+      throw error
+    }
     console.warn("API call failed, falling back to mock data:", error)
   }
   // Fallback to mock data
@@ -253,7 +264,13 @@ export const fetchBundles = async (): Promise<Bundle[]> => {
     if (await isBackendHealthy()) {
       return await fetchBundlesFromAPI()
     }
+    if (!USE_MOCK_DATA) {
+      throw new Error("Backend unavailable and mock mode is disabled")
+    }
   } catch (error) {
+    if (!USE_MOCK_DATA) {
+      throw error
+    }
     console.warn("API call failed, falling back to mock data:", error)
   }
   return new Promise((resolve) => {
@@ -266,7 +283,13 @@ export const fetchDeployments = async (): Promise<Deployment[]> => {
     if (await isBackendHealthy()) {
       return await fetchDeploymentsFromAPI()
     }
+    if (!USE_MOCK_DATA) {
+      throw new Error("Backend unavailable and mock mode is disabled")
+    }
   } catch (error) {
+    if (!USE_MOCK_DATA) {
+      throw error
+    }
     console.warn("API call failed, falling back to mock data:", error)
   }
   return new Promise((resolve) => {
@@ -279,7 +302,13 @@ export const fetchMetrics = async (): Promise<Metric[]> => {
     if (await isBackendHealthy()) {
       return await fetchMetricsFromAPI()
     }
+    if (!USE_MOCK_DATA) {
+      throw new Error("Backend unavailable and mock mode is disabled")
+    }
   } catch (error) {
+    if (!USE_MOCK_DATA) {
+      throw error
+    }
     console.warn("API call failed, falling back to mock data:", error)
   }
   return new Promise((resolve) => {
@@ -292,7 +321,13 @@ export const fetchChartData = async (): Promise<ChartData[]> => {
     if (await isBackendHealthy()) {
       return await fetchChartDataFromAPI()
     }
+    if (!USE_MOCK_DATA) {
+      throw new Error("Backend unavailable and mock mode is disabled")
+    }
   } catch (error) {
+    if (!USE_MOCK_DATA) {
+      throw error
+    }
     console.warn("API call failed, falling back to mock data:", error)
   }
   return new Promise((resolve) => {
@@ -305,7 +340,13 @@ export const fetchSuccessRate = async (): Promise<SuccessRateData> => {
     if (await isBackendHealthy()) {
       return await fetchSuccessRateFromAPI()
     }
+    if (!USE_MOCK_DATA) {
+      throw new Error("Backend unavailable and mock mode is disabled")
+    }
   } catch (error) {
+    if (!USE_MOCK_DATA) {
+      throw error
+    }
     console.warn("API call failed, falling back to mock data:", error)
   }
   return new Promise((resolve) => {

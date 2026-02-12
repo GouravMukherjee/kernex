@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.config import get_settings
+from app.api.dependencies import require_admin_user
 from app.db.session import get_session
 from app.models.bundle import Bundle
 from app.schemas.bundle import BundleCreateResponse, BundleListResponse, BundleListItem
@@ -32,6 +33,7 @@ async def _compute_sha256(file_path: Path) -> str:
 async def upload_bundle(
     file: UploadFile = File(...),
     manifest: str = Form(...),
+    _admin=Depends(require_admin_user),
     session: AsyncSession = Depends(get_session),
 ) -> BundleCreateResponse:
     settings = get_settings()
@@ -70,7 +72,10 @@ async def upload_bundle(
 
 
 @router.get("", response_model=BundleListResponse, status_code=status.HTTP_200_OK)
-async def list_bundles(session: AsyncSession = Depends(get_session)) -> BundleListResponse:
+async def list_bundles(
+    _admin=Depends(require_admin_user),
+    session: AsyncSession = Depends(get_session),
+) -> BundleListResponse:
     result = await session.execute(select(Bundle))
     bundles = result.scalars().all()
     return BundleListResponse(
@@ -103,7 +108,10 @@ async def download_bundle(bundle_id: str, session: AsyncSession = Depends(get_se
 
 @router.post("/{bundle_id}/verify", status_code=status.HTTP_200_OK)
 async def verify_bundle(
-    bundle_id: str, provided_checksum: Optional[str] = None, session: AsyncSession = Depends(get_session)
+    bundle_id: str,
+    provided_checksum: Optional[str] = None,
+    _admin=Depends(require_admin_user),
+    session: AsyncSession = Depends(get_session),
 ):
     bundle = await session.scalar(select(Bundle).where(Bundle.id == bundle_id))
     if not bundle:

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.api.dependencies import require_admin_user
 from app.db.session import get_session
 from app.models.device import Device
 from app.models.heartbeat import Heartbeat
@@ -50,7 +51,10 @@ async def register_device(
 
 
 @router.get("")
-async def list_devices(session: AsyncSession = Depends(get_session)) -> DeviceListResponse:
+async def list_devices(
+    _admin=Depends(require_admin_user),
+    session: AsyncSession = Depends(get_session),
+) -> DeviceListResponse:
     result = await session.execute(select(Device))
     devices = result.scalars().all()
     return DeviceListResponse(
@@ -71,7 +75,11 @@ async def list_devices(session: AsyncSession = Depends(get_session)) -> DeviceLi
 
 
 @router.get("/{device_id}")
-async def get_device(device_id: str, session: AsyncSession = Depends(get_session)) -> DeviceDetail:
+async def get_device(
+    device_id: str,
+    _admin=Depends(require_admin_user),
+    session: AsyncSession = Depends(get_session),
+) -> DeviceDetail:
     device = await session.scalar(select(Device).where(Device.device_id == device_id))
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")

@@ -1,37 +1,16 @@
 "use client"
 
+import { useQuery } from "@tanstack/react-query"
 import { Card } from "@/components/ui/card"
-import { Terminal } from "lucide-react"
-
-const mockLogs = [
-  {
-    timestamp: "2026-01-18T10:23:45Z",
-    level: "INFO",
-    message: "Device edge-node-prod-01 heartbeat received",
-  },
-  {
-    timestamp: "2026-01-18T10:23:42Z",
-    level: "INFO",
-    message: "Deployment deploy-001 completed successfully",
-  },
-  {
-    timestamp: "2026-01-18T10:23:38Z",
-    level: "WARNING",
-    message: "Device edge-node-prod-03 high CPU usage: 78%",
-  },
-  {
-    timestamp: "2026-01-18T10:23:30Z",
-    level: "INFO",
-    message: "Bundle v2.1.4 deployed to 24 devices",
-  },
-  {
-    timestamp: "2026-01-18T10:23:15Z",
-    level: "ERROR",
-    message: "Device edge-node-dev-01 connection timeout",
-  },
-]
+import { fetchLogsFromAPI } from "@/lib/api/services"
 
 export default function LogsPage() {
+  const { data: logs = [], isLoading, error } = useQuery({
+    queryKey: ["logs"],
+    queryFn: () => fetchLogsFromAPI(200),
+    refetchInterval: 10000,
+  })
+
   const getLevelColor = (level: string) => {
     switch (level) {
       case "INFO":
@@ -55,8 +34,17 @@ export default function LogsPage() {
       </div>
 
       <Card className="p-4 bg-[#08090C] border-border font-mono text-xs">
+        {isLoading && <p className="text-text-dim">Loading logs...</p>}
+        {error && (
+          <p className="text-danger">
+            Unable to load logs from backend.
+          </p>
+        )}
+        {!isLoading && !error && logs.length === 0 && (
+          <p className="text-text-dim">No logs available.</p>
+        )}
         <div className="space-y-1">
-          {mockLogs.map((log, i) => (
+          {logs.map((log, i) => (
             <div key={i} className="flex items-start gap-3 py-1">
               <span className="text-text-dim whitespace-nowrap">
                 {new Date(log.timestamp).toLocaleTimeString()}

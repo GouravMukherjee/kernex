@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
+from app.api.dependencies import require_admin_user
 from app.models.device import Device
 from app.models.device_config import DeviceConfig, DeviceBundleHistory
 from app.schemas.device_config import (
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/devices", tags=["devices"])
 @router.get("/{device_id}/config", response_model=DeviceConfigResponse)
 async def get_device_config(
     device_id: str,
+    _admin=Depends(require_admin_user),
     session: AsyncSession = Depends(get_session),
 ):
     """Get device configuration"""
@@ -50,6 +52,7 @@ async def get_device_config(
 async def update_device_config(
     device_id: str,
     config_update: DeviceConfigUpdate,
+    _admin=Depends(require_admin_user),
     session: AsyncSession = Depends(get_session),
 ):
     """Update device configuration"""
@@ -88,6 +91,7 @@ async def update_device_config(
 async def get_device_bundle_history(
     device_id: str,
     limit: int = Query(20, ge=1, le=100),
+    _admin=Depends(require_admin_user),
     session: AsyncSession = Depends(get_session),
 ):
     """Get device bundle deployment history for rollback selection"""
@@ -110,6 +114,7 @@ async def get_device_bundle_history(
 @router.post("/rollback", response_model=RollbackResponse)
 async def rollback_bundle(
     rollback_req: RollbackRequest,
+    _admin=Depends(require_admin_user),
     session: AsyncSession = Depends(get_session),
 ):
     """Create rollback deployment to previous bundle version"""

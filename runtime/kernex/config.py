@@ -11,6 +11,9 @@ class Settings(BaseModel):
     key_path: str = os.getenv("KERNEX_KEY_PATH", "./device_key.pem")
     polling_interval: int = int(os.getenv("POLLING_INTERVAL", "60"))
     config_path: str = os.getenv("KERNEX_CONFIG_PATH", "./device_config.json")
+    heartbeat_timeout: int = int(os.getenv("HEARTBEAT_TIMEOUT", "30"))
+    deploy_timeout: int = int(os.getenv("DEPLOY_TIMEOUT", "300"))
+    log_level: str = os.getenv("LOG_LEVEL", "INFO")
 
 
 @lru_cache()

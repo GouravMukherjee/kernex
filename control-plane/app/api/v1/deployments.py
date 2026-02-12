@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.session import get_session
+from app.api.dependencies import require_admin_user
 from app.models.bundle import Bundle
 from app.models.deployment import Deployment
 from app.models.device import Device
@@ -22,7 +23,9 @@ router = APIRouter(prefix="/deployments", tags=["deployments"])
 
 @router.post("", response_model=DeploymentCreateResponse, status_code=status.HTTP_201_CREATED)
 async def create_deployment(
-    payload: DeploymentCreateRequest, session: AsyncSession = Depends(get_session)
+    payload: DeploymentCreateRequest,
+    _admin=Depends(require_admin_user),
+    session: AsyncSession = Depends(get_session),
 ) -> DeploymentCreateResponse:
     bundle = await session.scalar(select(Bundle).where(Bundle.version == payload.bundle_version))
     if not bundle:
@@ -38,7 +41,10 @@ async def create_deployment(
 
 
 @router.get("", response_model=DeploymentListResponse, status_code=status.HTTP_200_OK)
-async def list_deployments(session: AsyncSession = Depends(get_session)) -> DeploymentListResponse:
+async def list_deployments(
+    _admin=Depends(require_admin_user),
+    session: AsyncSession = Depends(get_session),
+) -> DeploymentListResponse:
     result = await session.execute(select(Deployment))
     deployments = result.scalars().all()
     # fetch bundle versions
@@ -66,7 +72,11 @@ async def list_deployments(session: AsyncSession = Depends(get_session)) -> Depl
 
 
 @router.get("/{deployment_id}", response_model=DeploymentDetail, status_code=status.HTTP_200_OK)
-async def get_deployment(deployment_id: str, session: AsyncSession = Depends(get_session)) -> DeploymentDetail:
+async def get_deployment(
+    deployment_id: str,
+    _admin=Depends(require_admin_user),
+    session: AsyncSession = Depends(get_session),
+) -> DeploymentDetail:
     deployment = await session.scalar(select(Deployment).where(Deployment.id == deployment_id))
     if not deployment:
         raise HTTPException(status_code=404, detail="Deployment not found")
@@ -84,7 +94,11 @@ async def get_deployment(deployment_id: str, session: AsyncSession = Depends(get
 
 
 @router.post("/{deployment_id}/rollback", status_code=status.HTTP_202_ACCEPTED)
-async def rollback_deployment(deployment_id: str, session: AsyncSession = Depends(get_session)) -> dict:
+async def rollback_deployment(
+    deployment_id: str,
+    _admin=Depends(require_admin_user),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
     deployment = await session.scalar(select(Deployment).where(Deployment.id == deployment_id))
     if not deployment:
         raise HTTPException(status_code=404, detail="Deployment not found")

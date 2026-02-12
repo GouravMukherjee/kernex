@@ -1,7 +1,7 @@
 """Authentication API endpoints"""
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -58,7 +58,7 @@ async def register(
     await session.commit()
     await session.refresh(user)
 
-    return UserResponse.from_attributes(user)
+    return UserResponse.model_validate(user)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -99,14 +99,26 @@ async def login(
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user(
-    token: str = None,
+    authorization: str | None = Header(default=None, alias="Authorization"),
     session: AsyncSession = Depends(get_session),
 ) -> UserResponse:
     """Get current authenticated user"""
-    if not token:
+    if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
+        )
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header",
+        )
+
+    token = authorization.split(" ", 1)[1].strip()
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing",
         )
 
     # Decode token
@@ -128,4 +140,4 @@ async def get_current_user(
             detail="User not found",
         )
 
-    return UserResponse.from_attributes(user)
+    return UserResponse.model_validate(user)

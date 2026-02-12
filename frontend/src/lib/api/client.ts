@@ -3,9 +3,9 @@ import axios from "axios"
 // Support both local development and production URLs
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NODE_ENV === "production"
+  (process.env.NODE_ENV === "production"
     ? "https://api.kernex.dev/api/v1"
-    : "http://localhost:8000/api/v1"
+    : "http://localhost:8000/api/v1")
 
 console.log("[API Client] Base URL:", API_BASE_URL)
 
@@ -25,11 +25,13 @@ apiClient.interceptors.request.use(
       console.log("[API Request]", config.method?.toUpperCase(), config.url)
     }
 
-    // Add auth token if available (for future authentication)
-    // const token = localStorage.getItem("auth_token")
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
+    // Add auth token when available (used when backend auth is enabled)
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("auth_token")
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
     return config
   },
   (error) => {

@@ -1,14 +1,16 @@
 import time
-import psutil
 from typing import Dict, Any
+
+from kernex.agent.monitor import collect_health_snapshot
 
 
 def build_heartbeat_payload(agent_version: str | None = None) -> Dict[str, Any]:
+    snapshot = collect_health_snapshot()
     return {
         "agent_version": agent_version,
-        "memory_mb": psutil.virtual_memory().used / (1024 * 1024),
-        "cpu_pct": psutil.cpu_percent(interval=0.1),
-        "status": "healthy",
+        "memory_mb": snapshot.memory_mb,
+        "cpu_pct": snapshot.cpu_pct,
+        "status": snapshot.status,
     }
 
 

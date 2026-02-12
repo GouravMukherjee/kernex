@@ -1,16 +1,16 @@
 import asyncio
 import httpx
-import subprocess
 from pathlib import Path
 
 from kernex.config import get_settings
 from kernex.device.identity import ensure_keypair
 from kernex.device.config import load_device_config, save_device_config
+from kernex.device.info import collect_device_info
 from kernex.polling.heartbeat import build_heartbeat_payload
+from kernex.agent.launcher import run_script
 from kernex.agent.bundle_handler import (
     download_bundle,
     extract_bundle,
-    verify_checksum,
     load_manifest,
     validate_manifest,
 )
@@ -25,7 +25,11 @@ async def register_device() -> None:
         return
 
     _, public_key = ensure_keypair(Path(settings.key_path))
-    payload = {"public_key": public_key, "device_type": "python_sim"}
+    payload = {
+        "public_key": public_key,
+        "device_type": "python_sim",
+        "hardware_metadata": collect_device_info(),
+    }
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(f"{settings.control_plane_url}/devices/register", json=payload)
         resp.raise_for_status()
@@ -76,15 +80,12 @@ async def execute_command(command: dict, client: httpx.AsyncClient) -> None:
             deploy_script = manifest.get("deploy", {}).get("script")
             if deploy_script:
                 print(f"[DEPLOY] Running deployment script: {deploy_script}")
-                result = subprocess.run(
+                result = await run_script(
                     deploy_script,
-                    shell=True,
                     cwd=extracted_dir,
-                    capture_output=True,
-                    text=True,
-                    timeout=300
+                    timeout_seconds=300,
                 )
-                if result.returncode != 0:
+                if result.return_code != 0:
                     raise RuntimeError(f"Deploy script failed: {result.stderr}")
                 print(f"[DEPLOY] Script output: {result.stdout}")
             
@@ -148,15 +149,12 @@ async def execute_command(command: dict, client: httpx.AsyncClient) -> None:
             rollback_script = manifest.get("rollback", {}).get("script") or manifest.get("deploy", {}).get("script")
             if rollback_script:
                 print(f"[ROLLBACK] Running rollback script: {rollback_script}")
-                result = subprocess.run(
+                result = await run_script(
                     rollback_script,
-                    shell=True,
                     cwd=extracted_dir,
-                    capture_output=True,
-                    text=True,
-                    timeout=300
+                    timeout_seconds=300,
                 )
-                if result.returncode != 0:
+                if result.return_code != 0:
                     raise RuntimeError(f"Rollback script failed: {result.stderr}")
                 print(f"[ROLLBACK] Script output: {result.stdout}")
             
@@ -203,6 +201,8 @@ async def execute_command(command: dict, client: httpx.AsyncClient) -> None:
         # Update runtime settings
         try:
             settings.polling_interval = int(polling_interval)
+            settings.heartbeat_timeout = int(heartbeat_timeout)
+            settings.deploy_timeout = int(deploy_timeout)
             settings.log_level = log_level
             print(f"[CONFIG] Configuration applied successfully")
         except Exception as exc:

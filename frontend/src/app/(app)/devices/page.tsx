@@ -10,7 +10,7 @@ import { Search } from "lucide-react"
 
 export default function DevicesPage() {
   const { openInspector } = useUIStore()
-  const { data: devices = [] } = useQuery({
+  const { data: devices = [], isLoading, isError, error } = useQuery({
     queryKey: ["devices"],
     queryFn: fetchDevices,
     refetchInterval: 10000,
@@ -49,6 +49,15 @@ export default function DevicesPage() {
       </div>
 
       <Card className="p-6">
+        {isLoading && <p className="text-sm text-text-dim mb-3">Loading devices...</p>}
+        {isError && (
+          <p className="text-sm text-danger mb-3">
+            Failed to load devices: {(error as Error)?.message || "unknown error"}
+          </p>
+        )}
+        {!isLoading && !isError && devices.length === 0 && (
+          <p className="text-sm text-text-dim mb-3">No devices found.</p>
+        )}
         <div className="overflow-hidden">
           <table className="w-full">
             <thead>

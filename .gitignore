@@ -75,3 +75,8 @@ secrets/
 *LOCAL_SECRETS*
 *.secrets.txt
 infra/terraform/terraform.tfvars
+
+# Sandbox temp artifact
+docs/current/write_test.tmp
+BACKEND_CONTEXT_REPORT.md
+VERCEL_DIGITALOCEAN_CONNECTION_GUIDE.md
